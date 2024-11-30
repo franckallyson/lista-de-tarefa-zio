@@ -1,6 +1,5 @@
 import zio._
 import repository._
-
 object TaskRepositoryTest extends ZIOAppDefault {
     override def run: ZIO[ZIOAppArgs with Scope, Any, Any] = {
         val test = for {
@@ -19,4 +18,3 @@ object TaskRepositoryTest extends ZIOAppDefault {
         test.provide(TaskRepository.live)
     }
 }
-
