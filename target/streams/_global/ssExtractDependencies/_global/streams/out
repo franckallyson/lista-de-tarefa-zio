@@ -1,8 +1,8 @@
-[error] sbt.librarymanagement.ResolveException: Error downloading dev.zio:zio-http_3:1.0.0
+[error] sbt.librarymanagement.ResolveException: Error downloading dev.zio:zio-http_3:2.1.0
 [error]   Not found
 [error]   Not found
-[error]   not found: C:\Users\pedro\.ivy2\localdev.zio\zio-http_3\1.0.0\ivys\ivy.xml
-[error]   not found: https://repo1.maven.org/maven2/dev/zio/zio-http_3/1.0.0/zio-http_3-1.0.0.pom
+[error]   not found: C:\Users\pedro\.ivy2\localdev.zio\zio-http_3\2.1.0\ivys\ivy.xml
+[error]   not found: https://repo1.maven.org/maven2/dev/zio/zio-http_3/2.1.0/zio-http_3-2.1.0.pom
 [error] 	at lmcoursier.CoursierDependencyResolution.unresolvedWarningOrThrow(CoursierDependencyResolution.scala:346)
 [error] 	at lmcoursier.CoursierDependencyResolution.$anonfun$update$39(CoursierDependencyResolution.scala:315)
 [error] 	at scala.util.Either$LeftProjection.map(Either.scala:573)
@@ -31,8 +31,8 @@
 [error] 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
 [error] 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
 [error] 	at java.base/java.lang.Thread.run(Thread.java:842)
-[error] (ssExtractDependencies) sbt.librarymanagement.ResolveException: Error downloading dev.zio:zio-http_3:1.0.0
+[error] (ssExtractDependencies) sbt.librarymanagement.ResolveException: Error downloading dev.zio:zio-http_3:2.1.0
 [error]   Not found
 [error]   Not found
-[error]   not found: C:\Users\pedro\.ivy2\localdev.zio\zio-http_3\1.0.0\ivys\ivy.xml
-[error]   not found: https://repo1.maven.org/maven2/dev/zio/zio-http_3/1.0.0/zio-http_3-1.0.0.pom
+[error]   not found: C:\Users\pedro\.ivy2\localdev.zio\zio-http_3\2.1.0\ivys\ivy.xml
+[error]   not found: https://repo1.maven.org/maven2/dev/zio/zio-http_3/2.1.0/zio-http_3-2.1.0.pom
