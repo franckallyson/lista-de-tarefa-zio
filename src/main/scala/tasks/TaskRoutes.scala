@@ -4,7 +4,9 @@ package tasks
 import zio.*
 import zio.http.*
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
-import tasks.Task
+import tasks.{
+    Task, TaskReturn
+}
 import zio.http.Header.AccessControlAllowOrigin.Specific
 /** Collection of routes that:
  *   - Accept a `Request` and returns a `Response`
@@ -39,8 +41,8 @@ object TaskRoutes:
                       .mapBoth(
                           _ => Response.internalServerError(s"Cannot retrieve task $id"),
                           {
-                              case Some(task) =>
-                                  Response(body = Body.from(task))
+                              case Some(taskReturn) =>
+                                  Response(body = Body.from(taskReturn))
                               case None =>
                                   Response.notFound(s"Task $id not found!")
                           }
@@ -56,7 +58,7 @@ object TaskRoutes:
             // PUT /tasks/:id -d '{"title": "...", "description": "...", "isCompleted": ...}'
             Method.PUT / "tasks" / string("id") -> handler { (id: String, req: Request) =>
                 for {
-                    updatedTask <- req.body.to[Task].orElseFail(Response.badRequest)
+                    updatedTask <- req.body.to[Task].orElseFail(Response.badRequest("Parametros enviados não correspondem"))
                     result <- TaskRepo
                       .update(id, updatedTask)
                       .mapBoth(
@@ -84,4 +86,4 @@ object TaskRoutes:
                               Response.notFound(s"Task $id not found!")
               )
             }
-        ) 
+        )

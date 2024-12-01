@@ -34,7 +34,7 @@ case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
     // Função de update
     override def update(id: String, updatedTask: Task): zio.Task[Boolean] = {
         val uuid = UUID.fromString(id)
-        
+
         ctx
           .run {
               quote {
@@ -51,23 +51,23 @@ case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
           .map(_ > 0) // Retorna true se alguma linha foi atualizada, false caso contrário
     }
 
-    override def lookup(id: String): zio.Task[Option[Task]] =
+    override def lookup(id: String): zio.Task[Option[TaskReturn]] =
         ctx
           .run {
               quote {
                   query[TaskTable]
                     .filter(p => p.uuid == lift(UUID.fromString(id)))
-                    .map(t => Task(t.title, t.description, t.isCompleted))
+                    .map(t => TaskReturn(t.uuid, t.title, t.description, t.isCompleted))
               }
           }
           .provide(ZLayer.succeed(ds))
           .map(_.headOption)
 
-    override def tasks: zio.Task[List[Task]] =
+    override def tasks: zio.Task[List[TaskReturn]] =
         ctx
           .run {
               quote {
-                  query[TaskTable].map(t => Task(t.title, t.description, t.isCompleted))
+                  query[TaskTable].map(t => TaskReturn(t.uuid, t.title, t.description, t.isCompleted))
               }
           }
           .provide(ZLayer.succeed(ds))
@@ -86,7 +86,7 @@ case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
           .provide(ZLayer.succeed(ds))
           .map(_ > 0) // Retorna true se alguma linha foi removida, false caso contrário
     }
-    
+
 object PersistentTaskRepo:
     def layer: ZLayer[Any, Throwable, PersistentTaskRepo] =
         Quill.DataSource.fromPrefix("TaskApp") >>>

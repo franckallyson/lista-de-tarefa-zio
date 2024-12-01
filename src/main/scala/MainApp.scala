@@ -1,6 +1,6 @@
 
 import tasks.{
-    InmemoryTaskRepo,
+    //InmemoryTaskRepo,
     PersistentTaskRepo,
     TaskRoutes
 }
@@ -10,13 +10,14 @@ import zio.http.Header.{AccessControlAllowOrigin, Origin}
 import zio.http.Middleware.{CorsConfig, cors}
 
 object MainApp extends ZIOAppDefault:
-    // Configuração de CORS personalizada
-    val config: CorsConfig = CorsConfig(
-        allowedOrigin = {
-            case origin if origin == Origin.parse("http://localhost/63342").toOption.get => Some(AccessControlAllowOrigin.Specific(origin))
-            case _ => None
-        },
-    )
+    val config: CorsConfig =
+        CorsConfig(
+            allowedOrigin = {
+                case origin if origin == Origin.parse("http://localhost:63342").toOption.get =>
+                    Some(AccessControlAllowOrigin.Specific(origin))
+                case _ => None
+            },
+        )
     def run =
         Server
           .serve(

@@ -1,62 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
     <style>
         body {
+            background-color: #f3f4f6;
+            margin: 0;
             font-family: Arial, sans-serif;
-            margin: 20px;
         }
+
+        .container {
+            max-width: 800px;
+            background: #ffffff;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            font-weight: bold;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
         .task {
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .task:hover {
+            background-color: #e8f0fe;
+            transform: translateY(-3px);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            border-radius: 8px;
             border: 1px solid #ccc;
             padding: 10px;
-            margin-bottom: 10px;
+            width: 90%;
+            font-size: 14px;
         }
-        button {
-            margin-right: 5px;
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
         }
+
+        .form-check-input {
+            margin-top: 5px;
+
+        }
+
+        .form-check-label {
+            margin-left: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .btn {
+            display: inline-block;
+            font-size: 14px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056d2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0056d2, #0038a8);
+        }
+
+        .btn-danger {
+            background-color: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #e63946;
+        }
+
+        .btn-warning {
+            background-color: #ffd166;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #f4a261;
+        }
+
+        .task-list {
+            margin-top: 30px;
+        }
+
         #task-list {
             margin-top: 20px;
         }
-        form {
-            margin-bottom: 20px;
-        }
-        input, textarea {
-            margin-bottom: 10px;
-            display: block;
-            width: 100%;
-            padding: 5px;
-        }
     </style>
 </head>
+
 <body>
-<h1>Task Manager</h1>
-<form id="task-form">
-    <h2>Create or Update Task</h2>
-    <input type="text" id="task-id" placeholder="Task ID (for update)" />
-    <input type="text" id="task-title" placeholder="Task Title" required />
-    <textarea id="task-description" placeholder="Task Description" required></textarea>
-    <label>
-        <input type="checkbox" id="task-completed" />
-        Completed
-    </label>
-    <button type="submit">Save Task</button>
-</form>
-<h2>Task List</h2>
-<div id="task-list"></div>
+<div class="container">
+    <h1>Task Manager</h1>
+
+    <!-- Task Form -->
+    <form id="task-form">
+        <h2>Create or Update Task</h2>
+        <div class="form-group">
+            <label for="task-id">Task ID (for update)</label>
+            <input type="text" id="task-id" class="form-control" placeholder="Task ID (for update)" />
+        </div>
+        <div class="form-group">
+            <label for="task-title">Task Title</label>
+            <input type="text" id="task-title" class="form-control" placeholder="Task Title" required />
+        </div>
+        <div class="form-group">
+            <label for="task-description">Task Description</label>
+            <textarea id="task-description" class="form-control" placeholder="Task Description" required></textarea>
+        </div>
+        <div class="form-group form-check">
+            <input type="checkbox" id="task-completed" class="form-check-input" />
+            <label for="task-completed" class="form-check-label">Completed</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Task</button>
+    </form>
+
+    <!-- Task List -->
+    <h2>Task List</h2>
+    <div id="task-list" class="task-list"></div>
+</div>
+
 <script>
-    const API_URL = 'http://localhost:8080/tasks';
-    console.log("Teste")
+    const API_URL = 'http://localhost:8080/tasks/';
+
     // Fetch and display all tasks
     async function fetchTasks() {
         try {
-            console.log("Teste2")
             const response = await fetch(API_URL);
-            console.log("Teste3")
-            console.log(response)
             const tasks = await response.json();
+
             const taskList = document.getElementById('task-list');
             taskList.innerHTML = '';
 
@@ -67,8 +181,8 @@
                         <strong>${task.title}</strong>
                         <p>${task.description}</p>
                         <p>Status: ${task.isCompleted ? 'Completed' : 'Pending'}</p>
-                        <button onclick="deleteTask('${task.id}')">Delete</button>
-                        <button onclick="editTask('${task.id}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTask('${task.id}')">Delete</button>
+                        <button class="btn btn-warning btn-sm" onclick="editTask('${task.id}')">Edit</button>
                     `;
                 taskList.appendChild(taskDiv);
             });
@@ -86,11 +200,11 @@
         const description = document.getElementById('task-description').value;
         const isCompleted = document.getElementById('task-completed').checked;
 
-        const task = { title, description, isCompleted };
+        const task = { id, title, description, isCompleted };
 
         try {
             const method = id ? 'PUT' : 'POST';
-            const url = id ? `${API_URL}/${id}` : API_URL;
+            const url = id ? `${API_URL}${id}` : API_URL;
 
             const response = await fetch(url, {
                 method,
@@ -115,7 +229,7 @@
     // Delete a task
     async function deleteTask(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
+            const response = await fetch(`${API_URL}${id}`, {
                 method: 'DELETE',
             });
 
@@ -133,7 +247,7 @@
     // Edit a task
     async function editTask(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}`);
+            const response = await fetch(`${API_URL}${id}`);
             const task = await response.json();
 
             if (task) {
@@ -150,5 +264,7 @@
     // Initial fetch
     fetchTasks();
 </script>
+
 </body>
+
 </html>
