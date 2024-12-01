@@ -1,15 +1,18 @@
 package tasks
 
+
 import zio.*
 import zio.http.*
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 import tasks.Task
+import zio.http.Header.AccessControlAllowOrigin.Specific
 /** Collection of routes that:
  *   - Accept a `Request` and returns a `Response`
  *   - May fail with type of `Response`
  *   - Require a `UserRepo` from the environment
  */
 object TaskRoutes:
+
     def apply(): Routes[TaskRepo, Response] =
         Routes(
             // POST /tasks -d '{"name": "John", "age": 35}'
@@ -67,5 +70,18 @@ object TaskRoutes:
                                   Response.notFound(s"Task $id not found!")
                       )
                 } yield result
+            },
+            // DELETE /tasks/:id
+            Method.DELETE / "tasks" / string("id") -> handler { (id: String, _: Request) =>
+                TaskRepo
+                  .delete(id)
+                  .mapBoth(
+                      _ => Response.internalServerError(s"Failed to delete task $id"),
+                      deleted =>
+                          if deleted then
+                              Response.text(s"Task $id deleted successfully!")
+                          else
+                              Response.notFound(s"Task $id not found!")
+              )
             }
-        )
+        ) 

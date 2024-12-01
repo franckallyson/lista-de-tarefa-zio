@@ -34,8 +34,7 @@ case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
     // Função de update
     override def update(id: String, updatedTask: Task): zio.Task[Boolean] = {
         val uuid = UUID.fromString(id)
-        val updatedAt = Some(java.time.Instant.now()) // Marca a hora de atualização
-
+        
         ctx
           .run {
               quote {
@@ -73,6 +72,21 @@ case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
           }
           .provide(ZLayer.succeed(ds))
 
+    override def delete(id: String): zio.Task[Boolean] = { // Implementação do delete
+        val uuid = UUID.fromString(id)
+
+        ctx
+          .run {
+              quote {
+                  query[TaskTable]
+                    .filter(_.uuid == lift(uuid))
+                    .delete
+              }
+          }
+          .provide(ZLayer.succeed(ds))
+          .map(_ > 0) // Retorna true se alguma linha foi removida, false caso contrário
+    }
+    
 object PersistentTaskRepo:
     def layer: ZLayer[Any, Throwable, PersistentTaskRepo] =
         Quill.DataSource.fromPrefix("TaskApp") >>>

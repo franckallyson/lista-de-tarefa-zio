@@ -12,6 +12,7 @@ trait TaskRepo:
 
     def tasks: zio.Task[List[Task]]
 
+    def delete(id: String): zio.Task[Boolean]
 
 object TaskRepo:
     def register(task: Task): ZIO[TaskRepo, Throwable, String] =
@@ -25,3 +26,6 @@ object TaskRepo:
 
     def tasks: ZIO[TaskRepo, Throwable, List[Task]] =
         ZIO.serviceWithZIO[TaskRepo](_.tasks)
+
+    def delete(id: String): ZIO[TaskRepo, Throwable, Boolean] = // Função DELETE
+        ZIO.serviceWithZIO[TaskRepo](_.delete(id))

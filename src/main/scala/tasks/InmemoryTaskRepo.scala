@@ -25,6 +25,15 @@ case class InmemoryTaskRepo(map: Ref[Map[String, Task]]) extends TaskRepo:
     def tasks: UIO[List[Task]] =
         map.get.map(_.values.toList)
 
+    def delete(id: String): UIO[Boolean] = // Implementação do método DELETE
+        for
+            exists <- map.get.map(_.contains(id)) // Verifica se a tarefa existe
+            result <- if exists then
+                map.update(_ - id).as(true) // Remove a tarefa e retorna true
+            else
+                ZIO.succeed(false) // Retorna false se a tarefa não existir
+        yield result
+
 object InmemoryTaskRepo {
     def layer: ZLayer[Any, Nothing, InmemoryTaskRepo] =
         ZLayer.fromZIO(
