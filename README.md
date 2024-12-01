@@ -229,3 +229,228 @@ O arquivo `TaskRoutes.scala` define as rotas da API para gerenciar a lista de ta
 - **Tratamento de Erros**: Mensagens de erro claras e diferenciadas para problemas de validação, recurso não encontrado ou erros internos.
 - **Integração com ZIO**: Utiliza as funções do repositório (`TaskRepo`) para realizar as operações de forma reativa e funcional.
 
+---
+
+## Repositório Persistente: [PersistentTaskRepo](src/main/scala/tasks/PersistentTaskRepo.scala)
+
+O arquivo `PersistentTaskRepo.scala` implementa o repositório de tarefas utilizando um banco de dados relacional, integrando o framework **ZIO** com **Quill** para realizar operações de persistência. Ele define as operações CRUD (Create, Read, Update, Delete) em uma tabela do banco de dados chamada `TaskTable`.
+
+### Estrutura da Tabela
+
+A tabela `TaskTable` representa os dados das tarefas no banco, com os seguintes campos:
+- `uuid`: Identificador único da tarefa (UUID).
+- `title`: Título da tarefa.
+- `description`: Descrição da tarefa.
+- `isCompleted`: Status indicando se a tarefa foi concluída.
+
+### Descrição dos Métodos
+
+1. **`register(task: Task): Task[String]`**
+    - **Descrição**: Registra uma nova tarefa no banco de dados.
+    - **Processo**:
+        - Gera um UUID único para a tarefa.
+        - Insere os dados da tarefa na tabela `TaskTable`.
+    - **Retorno**: ID da tarefa criada como `String`.
+
+2. **`update(id: String, updatedTask: Task): Task[Boolean]`**
+    - **Descrição**: Atualiza os campos de uma tarefa existente.
+    - **Processo**:
+        - Localiza a tarefa pelo `UUID`.
+        - Atualiza os campos `title`, `description` e `isCompleted`.
+    - **Retorno**: `true` se a atualização foi bem-sucedida; `false` caso contrário.
+
+3. **`lookup(id: String): Task[Option[TaskReturn]]`**
+    - **Descrição**: Recupera uma tarefa específica pelo identificador.
+    - **Processo**:
+        - Busca o registro correspondente ao `UUID` informado.
+        - Converte o registro para o modelo `TaskReturn`.
+    - **Retorno**: A tarefa encontrada ou `None` caso não exista.
+
+4. **`tasks: Task[List[TaskReturn]]`**
+    - **Descrição**: Recupera todas as tarefas registradas.
+    - **Processo**:
+        - Realiza uma consulta para listar todos os registros na tabela.
+        - Converte os registros para o modelo `TaskReturn`.
+    - **Retorno**: Lista de tarefas.
+
+5. **`delete(id: String): Task[Boolean]`**
+    - **Descrição**: Remove uma tarefa específica pelo identificador.
+    - **Processo**:
+        - Localiza o registro pelo `UUID`.
+        - Remove o registro da tabela.
+    - **Retorno**: `true` se a exclusão foi bem-sucedida; `false` caso contrário.
+
+### Configuração de Conexão
+
+- O repositório utiliza **H2 Database** para persistência, com contexto definido pelo `H2ZioJdbcContext` e estratégia de escape configurada.
+- A conexão ao banco é gerenciada através do **Quill** e configurada pelo prefixo `TaskApp`.
+
+### ZLayer
+
+O repositório fornece um `ZLayer` para injeção de dependência:
+```scala
+PersistentTaskRepo.layer
+```
+- Este layer configura automaticamente o datasource (DataSource) com base nas definições em application.conf ou outro arquivo de configuração do projeto.
+
+### Benefícios
+- Abstração: Facilita a separação entre lógica de persistência e lógica de aplicação.
+- Eficiência: Utiliza a API reativa do ZIO para operações não bloqueantes.
+- Escalabilidade: Implementado com Quill, permitindo migração para outros bancos com modificações mínimas.
+
+---
+
+## Configuração do Banco de Dados  
+
+O sistema utiliza o **H2 Database** como banco de dados relacional para persistir as informações das tarefas. Dois arquivos principais configuram e inicializam o banco de dados:  
+
+1. **`application.conf`**  
+   - Arquivo de configuração utilizado pelo framework **Quill** para definir os parâmetros de conexão ao banco de dados.  
+   - Configuração detalhada:  
+
+```hocon
+TaskApp {
+ dataSourceClassName = org.h2.jdbcx.JdbcDataSource
+ dataSource {
+   url = "jdbc:h2:file:./taskapp;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'classpath:h2-schema.sql'"
+   user = sa
+ }
+}
+```
+
+### Explicação
+- **`dataSourceClassName`**: Define o driver JDBC utilizado para conectar ao banco de dados H2.
+- **`url`**:
+    - Configura o caminho para o arquivo do banco de dados (`taskapp`).
+    - A opção `DB_CLOSE_DELAY=-1` mantém o banco de dados aberto mesmo após a desconexão (útil em ambientes de desenvolvimento).
+    - O parâmetro `INIT=RUNSCRIPT FROM 'classpath:h2-schema.sql'` executa automaticamente o script de inicialização `h2-schema.sql` ao criar ou abrir o banco de dados.
+- **`user`**: Define o nome de usuário padrão (`sa`).
+
+2. **`h2-schema.sql`**
+    - Script SQL responsável por inicializar o esquema do banco de dados.
+    - Conteúdo do arquivo:
+
+   ```sql
+   CREATE TABLE IF NOT EXISTS "TaskTable" (
+       "uuid" uuid NOT NULL PRIMARY KEY,
+       "title" VARCHAR(255),
+       "description" VARCHAR(255),
+       "isCompleted" BOOLEAN
+   );
+   ```  
+
+   ### Explicação
+    - **`CREATE TABLE IF NOT EXISTS`**: Cria a tabela `TaskTable` apenas se ela ainda não existir.
+    - **Colunas**:
+        - **`uuid`**: Identificador único da tarefa, definido como chave primária.
+        - **`title`**: Armazena o título da tarefa (máximo de 255 caracteres).
+        - **`description`**: Armazena a descrição da tarefa (máximo de 255 caracteres).
+        - **`isCompleted`**: Indica se a tarefa foi concluída (`BOOLEAN`).
+
+### Como Funciona
+
+1. **Conexão Inicial**
+    - Ao iniciar o sistema, o arquivo `application.conf` é lido, e a conexão com o banco de dados é configurada automaticamente utilizando os parâmetros fornecidos.
+
+2. **Inicialização do Esquema**
+    - Quando o banco é acessado pela primeira vez, o script `h2-schema.sql` é executado para criar a tabela necessária (`TaskTable`).
+
+3. **Persistência de Dados**
+    - A partir desse ponto, as tarefas podem ser armazenadas, atualizadas, recuperadas ou excluídas utilizando os métodos do repositório `PersistentTaskRepo`.
+
+### Vantagens
+
+- **Portabilidade**: O H2 Database é leve e integrado ao projeto, permitindo fácil execução local.
+- **Facilidade de Configuração**: A inicialização automática do esquema elimina a necessidade de setups manuais.
+- **Escalabilidade**: A estrutura é flexível para migração futura para bancos de dados mais robustos, como PostgreSQL ou MySQL, com ajustes mínimos.
+
+### Código-fonte
+
+- Arquivo de configuração: [application.conf](./src/main/resources/application.conf).
+- Script SQL: [h2-schema.sql](./src/main/resources/h2-schema.sql).
+
+---
+
+## **[MainApp](src/main/scala/MainApp.scala)**
+O arquivo principal  configura e inicia o servidor HTTP utilizando o framework **ZIO HTTP**. Ele define as rotas disponíveis, aplica políticas de **CORS** (Cross-Origin Resource Sharing) e especifica as dependências, incluindo o repositório de persistência de dados.
+
+---
+
+### **Componentes Principais**
+
+#### **1. Configuração de CORS**
+```scala
+val config: CorsConfig =
+    CorsConfig(
+        allowedOrigin = {
+            case origin if origin == Origin.parse("http://localhost:63342").toOption.get =>
+                Some(AccessControlAllowOrigin.Specific(origin))
+            case _ => None
+        },
+    )
+```
+
+- **Função**: Define as regras de CORS para controlar quais origens têm permissão para acessar o servidor.
+- **`allowedOrigin`**:
+    - Especifica que apenas requisições originadas do endereço `http://localhost:63342` são permitidas.
+    - Outras origens recebem uma resposta indicando que o acesso é proibido.
+- **`AccessControlAllowOrigin`**: Configura a resposta HTTP com a política de origem permitida.
+
+#### **2. Execução do Servidor**
+```scala
+def run =
+    Server
+      .serve(
+          TaskRoutes() @@ cors(config) // Aplica o Middleware de Cors
+      )
+      .provide(
+          Server.defaultWithPort(8080),
+          PersistentTaskRepo.layer
+      )
+```
+
+##### **a. Rotas do Servidor**
+- `TaskRoutes()`: Define as rotas da aplicação, que incluem operações CRUD para tarefas (registrar, buscar, atualizar, listar e deletar). Essas rotas foram configuradas no arquivo `TaskRoutes.scala`.
+- `@@ cors(config)`: Aplica o **middleware de CORS**, garantindo que as regras definidas sejam aplicadas a todas as requisições.
+
+##### **b. Configuração do Servidor**
+- `Server.defaultWithPort(8080)`: Configura o servidor para escutar conexões na porta **8080**.
+- `PersistentTaskRepo.layer`: Injeta a implementação de persistência `PersistentTaskRepo` como camada do repositório, que interage com o banco de dados H2.
+
+---
+
+### **Como Funciona o Ciclo do Aplicativo**
+
+1. **Inicialização**:
+    - O método `run` é o ponto de entrada.
+    - O servidor é configurado para escutar na porta 8080, servir as rotas definidas e aplicar o middleware de CORS.
+
+2. **Requisições**:
+    - As requisições HTTP passam pelas rotas configuradas em `TaskRoutes.scala`.
+    - Dependendo da operação, o `PersistentTaskRepo` é chamado para interagir com o banco de dados (armazenar, atualizar ou recuperar tarefas).
+
+3. **Controle de Acesso (CORS)**:
+    - O middleware verifica a origem da requisição antes de processá-la.
+    - Se a origem for permitida (`http://localhost:63342`), a requisição é processada normalmente.
+    - Caso contrário, o servidor retorna uma resposta indicando que a origem não é autorizada.
+
+---
+
+### **Pontos Importantes**
+
+- **Portabilidade**:
+    - O código foi configurado para funcionar com persistência (`PersistentTaskRepo`). Caso necessário, pode ser facilmente adaptado para usar um repositório em memória (`InmemoryTaskRepo`).
+
+- **Middleware**:
+    - O uso do middleware de CORS é essencial para segurança, especialmente em ambientes onde o front-end e o back-end estão em domínios diferentes.
+
+- **Evolução**:
+    - A aplicação está preparada para escalar, suportando novas rotas, repositórios diferentes ou alterações na configuração de servidor.
+
+---
+
+## Front-End
+
+![front-end](images/img.png)
+
+- **[IMPORTANTE]** Este front-end foi criado para interagir com o Back-End. **Deve-se verificar se a porta em que o HTML foi aberto bate com a definida no CORS em [MainApp](src/main/scala/MainApp.scala)**
