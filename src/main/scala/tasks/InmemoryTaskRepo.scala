@@ -9,7 +9,16 @@ case class InmemoryTaskRepo(map: Ref[Map[String, Task]]) extends TaskRepo:
             id <- Random.nextUUID.map(_.toString)
             _  <- map.update(_ + (id -> task))
         yield id
-
+    
+    def update(id: String, updatedTask: Task): UIO[Boolean] =
+        for
+            exists <- map.get.map(_.contains(id)) // Verifica se a tarefa existe
+            result <- if exists then
+                map.update(_.updated(id, updatedTask)).as(true)
+            else
+                ZIO.succeed(false) // Retorna false se a tarefa não existir
+        yield result
+            
     def lookup(id: String): UIO[Option[Task]] =
         map.get.map(_.get(id))
 

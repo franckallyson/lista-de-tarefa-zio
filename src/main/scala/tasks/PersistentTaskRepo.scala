@@ -7,10 +7,11 @@ import io.getquill.*
 import zio.*
 import tasks.Task
 
+import java.time.Instant
 import java.util.UUID
 import javax.sql.DataSource
 
-case class TaskTable(uuid: UUID, name: String, description: String, completed: Boolean)
+case class TaskTable(uuid: UUID, title: String, description: String, isCompleted: Boolean)
 
 case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
     val ctx = new H2ZioJdbcContext(Escape)
@@ -23,21 +24,41 @@ case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
             _ <- ctx.run {
                 quote {
                     query[TaskTable].insertValue {
-                        lift(TaskTable(id, task.name, task.description, task.completed))
+                        lift(TaskTable(id, task.title, task.description, task.isCompleted))
                     }
                 }
             }
         yield id.toString
     }.provide(ZLayer.succeed(ds))
-    
-    
+
+    // Função de update
+    override def update(id: String, updatedTask: Task): zio.Task[Boolean] = {
+        val uuid = UUID.fromString(id)
+        val updatedAt = Some(java.time.Instant.now()) // Marca a hora de atualização
+
+        ctx
+          .run {
+              quote {
+                  query[TaskTable]
+                    .filter(p => p.uuid == lift(uuid))
+                    .update(
+                        _.title -> lift(updatedTask.title),
+                        _.description -> lift(updatedTask.description),
+                        _.isCompleted -> lift(updatedTask.isCompleted),
+                    )
+              }
+          }
+          .provide(ZLayer.succeed(ds))
+          .map(_ > 0) // Retorna true se alguma linha foi atualizada, false caso contrário
+    }
+
     override def lookup(id: String): zio.Task[Option[Task]] =
         ctx
           .run {
               quote {
                   query[TaskTable]
                     .filter(p => p.uuid == lift(UUID.fromString(id)))
-                    .map(u => Task(u.name, u.description, u.completed))
+                    .map(t => Task(t.title, t.description, t.isCompleted))
               }
           }
           .provide(ZLayer.succeed(ds))
@@ -47,7 +68,7 @@ case class PersistentTaskRepo(ds: DataSource) extends TaskRepo:
         ctx
           .run {
               quote {
-                  query[TaskTable].map(u => Task(u.name, u.description, u.completed))
+                  query[TaskTable].map(t => Task(t.title, t.description, t.isCompleted))
               }
           }
           .provide(ZLayer.succeed(ds))

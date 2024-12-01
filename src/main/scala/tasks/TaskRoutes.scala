@@ -22,7 +22,7 @@ object TaskRoutes:
                         .mapBoth(
                             _ =>
                                 Response
-                                  .internalServerError(s"Failed to register the user: $u"),
+                                  .internalServerError(s"Failed to register the task: $u"),
                             id => Response.text(id)
                         )
                 } yield r
@@ -34,20 +34,38 @@ object TaskRoutes:
                     TaskRepo
                       .lookup(id)
                       .mapBoth(
-                          _ => Response.internalServerError(s"Cannot retrieve user $id"),
+                          _ => Response.internalServerError(s"Cannot retrieve task $id"),
                           {
                               case Some(task) =>
                                   Response(body = Body.from(task))
                               case None =>
-                                  Response.notFound(s"User $id not found!")
+                                  Response.notFound(s"Task $id not found!")
                           }
                       )
             },
             // GET /tasks
             Method.GET / "tasks" -> handler {
                 TaskRepo.tasks.mapBoth(
-                    _ => Response.internalServerError("Cannot retrieve users!"),
+                    _ => Response.internalServerError("Cannot retrieve tasks!"),
                     tasks => Response(body = Body.from(tasks))
                 )
+            },
+            // PUT /tasks/:id -d '{"title": "...", "description": "...", "isCompleted": ...}'
+            Method.PUT / "tasks" / string("id") -> handler { (id: String, req: Request) =>
+                for {
+                    updatedTask <- req.body.to[Task].orElseFail(Response.badRequest)
+                    result <- TaskRepo
+                      .update(id, updatedTask)
+                      .mapBoth(
+                          _ =>
+                              Response
+                                .internalServerError(s"Failed to update the task: $id"),
+                          updated =>
+                              if updated then
+                                  Response.text(s"Task $id updated successfully!")
+                              else
+                                  Response.notFound(s"Task $id not found!")
+                      )
+                } yield result
             }
         )
